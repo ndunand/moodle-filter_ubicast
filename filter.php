@@ -57,6 +57,10 @@ class filter_ubicast extends moodle_text_filter {
             return $text;
         }
 
+        if (strpos($text, 'atto_ubicast') === false) {
+            return $text;
+        }
+
         $pattern =
                 '/<img class="atto_ubicast courseid_([0-9]+)_mediaid_([a-z0-9]+)" style="[^"]*width:\s?([^;" ]+);\s?height:\s?([^;" ]+)[^"]*"[^>]*>/';
 
