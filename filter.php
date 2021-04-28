@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -28,7 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 
 class filter_ubicast extends moodle_text_filter {
 
-    private static function getIframeUrl($matches) {
+    private static function get_iframe_url($matches) {
         global $CFG;
 
         $courseid = $matches[1];
@@ -36,10 +35,10 @@ class filter_ubicast extends moodle_text_filter {
         $width = $matches[3];
         $height = $matches[4];
 
-        $url =
-                $CFG->wwwroot . '/lib/editor/atto/plugins/ubicast/view.php?course=' . $courseid . '&video=' . $mediaid . '/';
-        $iframe =
-                '<iframe class="mediaserver-iframe" style="width: ' . $width . '; height: ' . $height . '; background-color: #ddd;" src="' . $url . '" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen="allowfullscreen"></iframe>';
+        $url = $CFG->wwwroot . '/lib/editor/atto/plugins/ubicast/view.php?course=' . $courseid . '&video=' . $mediaid;
+        $iframe = '<iframe class="mediaserver-iframe" src="' . $url . '" ' .
+            'style="width: ' . $width . '; height: ' . $height . '; background-color: #ddd;" ' .
+            'frameborder="0" allow="autoplay; encrypted-media" allowfullscreen="allowfullscreen"></iframe>';
 
         return $iframe;
     }
@@ -53,19 +52,17 @@ class filter_ubicast extends moodle_text_filter {
     public function filter($text, array $options = array()) {
 
         if (!is_string($text)) {
-            // non string data can not be filtered anyway
+            // Non string data can not be filtered anyway.
             return $text;
         }
 
-        $pattern =
-                '/<img class="atto_ubicast courseid_([0-9]+)_mediaid_([a-z0-9]+)" style="[^"]*width:\s?([^;" ]+);\s?height:\s?([^;" ]+)[^"]*"[^>]*>/';
+        $pattern = '/<img class="atto_ubicast courseid_([0-9]+)_mediaid_([a-z0-9]+)" style="[^"]*width:\s?([^;" ]+);\s?height:\s?([^;" ]+)[^"]*"[^>]*>/';
 
         $text = preg_replace_callback($pattern, [
                 'filter_ubicast',
-                'getIframeUrl'
+                'get_iframe_url'
         ], $text);
 
         return $text;
     }
-
 }
