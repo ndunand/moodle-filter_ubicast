@@ -32,12 +32,17 @@ class filter_ubicast extends moodle_text_filter {
 
         $courseid = $matches[1];
         $mediaid = $matches[2];
-        $width = $matches[3];
-        $height = $matches[4];
+        $style = $matches[3];
+        if (!strpos($style, 'width')) {
+            $style = 'width: 100%;' . $style;
+        }
+        if (!strpos($style, 'height')) {
+            $style = 'height: 300px;' . $style;
+        }
+        $style = 'background-color: #ddd;' . $style;
 
         $url = $CFG->wwwroot . '/lib/editor/atto/plugins/ubicast/view.php?course=' . $courseid . '&video=' . $mediaid;
-        $iframe = '<iframe class="mediaserver-iframe" src="' . $url . '" ' .
-            'style="width: ' . $width . '; height: ' . $height . '; background-color: #ddd;" ' .
+        $iframe = '<iframe class="mediaserver-iframe" src="' . $url . '" ' . 'style="' . $style . '" ' .
             'frameborder="0" allow="autoplay; encrypted-media" allowfullscreen="allowfullscreen"></iframe>';
 
         return $iframe;
@@ -56,7 +61,7 @@ class filter_ubicast extends moodle_text_filter {
             return $text;
         }
 
-        $pattern = '/<img class="atto_ubicast courseid_([0-9]+)_mediaid_([a-z0-9]+)" style="[^"]*width:\s?([^;" ]+);\s?height:\s?([^;" ]+)[^"]*"[^>]*>/';
+        $pattern = '/<img[^>]*class="atto_ubicast courseid_([0-9]+)_mediaid_([a-z0-9]+)"[^>]*style="([^"]*)"[^>]*>/';
 
         $text = preg_replace_callback($pattern, [
                 'filter_ubicast',
