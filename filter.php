@@ -42,7 +42,7 @@ class filter_ubicast extends moodle_text_filter {
         $style = 'background-color: #ddd;' . $style;
 
         $url = $CFG->wwwroot . '/lib/editor/atto/plugins/ubicast/view.php?course=' . $courseid . '&video=' . $mediaid;
-        $iframe = '<iframe class="mediaserver-iframe" src="' . $url . '" ' . 'style="' . $style . '" ' .
+        $iframe = '<iframe class="nudgis-iframe" src="' . $url . '" ' . 'style="' . $style . '" ' .
             'frameborder="0" allow="autoplay; encrypted-media" allowfullscreen="allowfullscreen"></iframe>';
 
         return $iframe;
