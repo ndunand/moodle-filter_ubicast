@@ -25,7 +25,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2022021700;
+$plugin->version = 2022021800;
 $plugin->requires = 2019052000; // Moodle 3.7.
 $plugin->component = 'filter_ubicast';
 $plugin->maturity = MATURITY_STABLE;
