@@ -26,3 +26,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['filtername'] = 'Ad-hoc filter for UbiCast Atto plugin';
+$string['createontheflyplaylists'] = 'Create playlists';
+$string['createontheflyplaylists_desc'] = 'If enabled, whenever multiple media is embedded, a playlist will be displayed.';
+$string['defaultapitimeoutsecs'] = 'API default timeout [s]';
+$string['defaultapitimeoutsecs_desc'] = 'Timeout for default API calls, in seconds.';
+$string['apikey'] = 'API key';
+$string['apikey_desc'] = 'API key to get media info from Nudgis Media Server.';
+$string['apilocation'] = 'API URL';
+$string['apilocation_desc'] = 'Nudgis Media Server API base URL.';

@@ -1,0 +1,41 @@
+.filter_ubicast_playlist {
+    width: 100%;
+    background-color: #eeeeee;
+    border: 1px #dddddd solid;
+}
+
+.filter_ubicast_playlist .hidden {
+    display: none;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_tabs {
+    height: 100%;
+    width: 30%;
+    float: right;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_tabs a {
+    color: #000000;
+    display: block;
+    padding: 5px;
+    border-bottom: 1px #dddddd solid;
+    text-decoration: none;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_tabs a:hover {
+    text-decoration: underline;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_tabs a.selected {
+    font-weight: bold;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_players {
+    height: 100%;
+    width: 70%;
+    float: left;
+}
+
+.filter_ubicast_playlist .clearfix {
+    clear: both;
+}
