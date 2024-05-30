@@ -153,8 +153,7 @@ class filter_ubicast extends moodle_text_filter {
             }
 
             $tabs .= <<<EOF
-<a href="#" id="filter_ubicast_playlisttab_$itemno" class="filter_ubicast_playlist_tab $selectedclass" onclick="tabs = document.getElementsByClassName('filter_ubicast_playlist_tab'); players = document.getElementsByClassName('filter_ubicast_playlist_player'); for (var i = 0; i < players.length; i++) { players[i].classList.add('hidden'); tabs[i].classList.remove('selected'); document.getElementById('filter_ubicast_playlistitem_$itemno').classList.remove('hidden'); document.getElementById('filter_ubicast_playlisttab_$itemno').classList.add('selected'); } return false;">$itemno
-. $title</a>
+<a href="#" id="filter_ubicast_playlisttab_$itemno" class="filter_ubicast_playlist_tab $selectedclass" onclick="tabs = document.getElementsByClassName('filter_ubicast_playlist_tab'); players = document.getElementsByClassName('filter_ubicast_playlist_player'); for (var i = 0; i < players.length; i++) { players[i].classList.add('hidden'); tabs[i].classList.remove('selected'); document.getElementById('filter_ubicast_playlistitem_$itemno').classList.remove('hidden'); document.getElementById('filter_ubicast_playlisttab_$itemno').classList.add('selected'); } return false;"><ol start="$itemno"><li>$title</li></ol></a>
 EOF;
             $players .= '<div id="filter_ubicast_playlistitem_' . $itemno . '" class="filter_ubicast_playlist_player ' . $hiddenclass . '">' . preg_replace_callback($this->pattern, [
                     'filter_ubicast',
