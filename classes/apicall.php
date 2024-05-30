@@ -39,6 +39,10 @@ class filter_ubicast_apicall {
      */
     static function sendRequest($path, $params = [], $timeout = 0, $method = 'GET') {
 
+        if (!get_config('filter_ubicast', 'apilocation') || !get_config('filter_ubicast', 'apikey')) {
+            return null;
+        }
+
         $apikey = get_config('filter_ubicast', 'apikey');
         $request_url = trim(get_config('filter_ubicast', 'apilocation'), '/') . '/' . trim($path,
                         '/') . '/' . '?api_key=' . $apikey;

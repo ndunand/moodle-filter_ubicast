@@ -140,14 +140,16 @@ class filter_ubicast extends moodle_text_filter {
 
             // Find out the tab's name – only way seems to use and API call.
             // We'll cheat and use \block_ubicastlife_apicall as it's available.
+            $title = '';
             $oid = preg_replace('/^.*mediaid_([^"]+)".*$/', '\1', $entryimg);
             try {
                 $media = \filter_ubicast_apicall::sendRequest('medias/get', ['oid' => $oid]);
-                $title = $media->info->title;
+                if (isset($media->info) && isset($media->info->title)) {
+                    $title = $media->info->title;
+                }
             }
             catch (Exception $exception) {
                 // leave it.
-                $title = $itemno;
             }
 
             $tabs .= <<<EOF
