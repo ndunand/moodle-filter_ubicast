@@ -27,26 +27,19 @@ defined('MOODLE_INTERNAL') || die();
 
 class filter_ubicast extends moodle_text_filter {
 
-    private static function get_iframe_url($matches) {
-        global $CFG;
+    protected $pattern;
 
-        $courseid = $matches[1];
-        $mediaid = $matches[2];
-        $style = $matches[3];
-        if (strpos($style, 'width') === false) {
-            $style = 'width: 100%;' . $style;
-        }
-        if (strpos($style, 'height') === false) {
-            $style = 'height: 300px;' . $style;
-        }
-        $style = 'background-color: #ddd;' . $style;
 
-        $url = $CFG->wwwroot . '/lib/editor/atto/plugins/ubicast/view.php?course=' . $courseid . '&video=' . $mediaid;
-        $iframe = '<iframe class="nudgis-iframe" src="' . $url . '" ' . 'style="' . $style . '" ' .
-            'frameborder="0" allow="autoplay; encrypted-media" allowfullscreen="allowfullscreen"></iframe>';
-
-        return $iframe;
+    /**
+     * Setup page with filter requirements and other prepare stuff.
+     *
+     * @param moodle_page $page The page we are going to add requirements to.
+     * @param context $context The context which contents are going to be filtered.
+     */
+    public function setup($page, $context) {
+        $this->pattern = '/<img[^>]*class="atto_ubicast courseid_([0-9]+)_mediaid_([a-z0-9]+)"[^>]*style="([^"]*)"[^>]*>/';
     }
+
 
     /**
      * @param string $text    some HTML content to process.
@@ -65,13 +58,166 @@ class filter_ubicast extends moodle_text_filter {
             return $text;
         }
 
-        $pattern = '/<img[^>]*class="atto_ubicast courseid_([0-9]+)_mediaid_([a-z0-9]+)"[^>]*style="([^"]*)"[^>]*>/';
+        // Embed several consecutive Ubicast videos as a playlist, if the feature is activated.
+        $isplaylist = false;
 
-        $text = preg_replace_callback($pattern, [
-                'filter_ubicast',
-                'get_iframe_url'
-        ], $text);
+        if (get_config('filter_ubicast', 'createontheflyplaylists')) {
+            $count = substr_count($text, 'class="atto_ubicast');
+            if ($count > 1) {
+                list($isplaylist, $text) = self::embedmany($text);
+            }
+        }
+        if (!$isplaylist) {
+            $text = preg_replace_callback($this->pattern, [
+                    'filter_ubicast',
+                    'get_iframe_html'
+            ], $text);
+        }
 
         return $text;
+    }
+
+    private static function get_iframe_html($matches) {
+        global $CFG;
+
+        $courseid = $matches[1];
+        $mediaid = $matches[2];
+        $style = $matches[3];
+        if (!str_contains($style, 'width')) {
+            $style = 'width: 100%;' . $style;
+        }
+        if (!str_contains($style, 'height')) {
+            $style = 'height: 300px;' . $style;
+        }
+        $style = 'background-color: #ddd;' . $style;
+
+        $url = $CFG->wwwroot . '/lib/editor/atto/plugins/ubicast/view.php?course=' . $courseid . '&video=' . $mediaid;
+        $iframe =
+                '<iframe class="nudgis-iframe" src="' . $url . '" ' . 'style="' . $style . '" ' . 'frameborder="0" allow="autoplay; encrypted-media" allowfullscreen="allowfullscreen"></iframe>';
+
+        return $iframe;
+    }
+
+    private function embedmany($text) {
+        global $DB, $PAGE;
+
+        static $jsinserted = 0;
+
+        $entries = array();
+        $nextstop = 0;
+
+        while (strpos($text, '<img class="atto_ubicast', $nextstop) !== false) {
+            $nextstart = strpos($text, '<img class="atto_ubicast', $nextstop);
+            if (!count($entries)) {
+                // We want to replace videos with a playlist from the first entry that will be part of the playlist,
+                // which might possible be the current one.
+                $start = $nextstart;
+            }
+            if (count($entries)) {
+                $textinbetween =
+                        trim(str_replace('&nbsp;', '', strip_tags(substr($text, $nextstop, ($nextstart - $nextstop)))));
+                if (strlen($textinbetween) > 1) {
+                    // Check that there is no actual text content in between. If there is, it's not to be a playlist.
+                    $this->isplaylist = false;
+
+                    return array(
+                            false,
+                            $text
+                    );
+                }
+            }
+            $nextstop = strpos($text, '>', $nextstart) + 1; // Note: +1 to dismiss the matched '>'.
+            $entry = substr($text, $nextstart, ($nextstop - $nextstart));
+            $entries[] = $entry;
+        }
+
+        $this->isplaylist = true;
+
+        $playlistjs = <<<EOF
+<script type="text/javascript">
+    var tabs = document.getElementsByClassName('filter_ubicast_playlist_tab');
+    var players = document.getElementsByClassName('filter_ubicast_playlist_player');
+    
+    var filter_ubicast_playlisttab_settab = function(itemno) {
+        for (var i = 0; i < players.length; i++) {
+            players[i].classList.add('hidden');
+            players[i].getElementsByTagName('iframe')[0].contentWindow.postMessage('pause', '*');
+            tabs[i].classList.remove('selected');
+        }
+        document.getElementById('filter_ubicast_playlistitem_' + itemno).classList.remove('hidden');
+        document.getElementById('filter_ubicast_playlisttab_' + itemno).classList.add('selected');
+    }
+</script>
+EOF;
+
+        if ($jsinserted) {
+            $playlistjs = '';
+        }
+        else {
+            $jsinserted = 1;
+        }
+
+        $players = '';
+        $tabs = '';
+        foreach ($entries as $entryno => $entryimg) {
+            $itemno = $entryno + 1; // start at #1 instead of index 0
+            $hiddenclass = $itemno   === 1 ? '' : ' hidden';
+            $selectedclass = $itemno   === 1 ? ' selected' : '';
+
+            // Find out the tab's name – only way seems to use and API call.
+            // We'll cheat and use \block_ubicastlife_apicall as it's available.
+            $title = '';
+            $oid = preg_replace('/^.*mediaid_([^"]+)".*$/', '\1', $entryimg);
+            try {
+                $media = \filter_ubicast_apicall::sendRequest('medias/get', ['oid' => $oid]);
+                if (isset($media->info) && isset($media->info->title)) {
+                    $title = $media->info->title;
+                }
+            }
+            catch (Exception $exception) {
+                // leave it.
+            }
+
+            $tabs .= <<<EOF
+<a href="#" id="filter_ubicast_playlisttab_$itemno" class="filter_ubicast_playlist_tab $selectedclass" onclick="filter_ubicast_playlisttab_settab($itemno); return false;"><ol start="$itemno"><li>$title</li></ol></a>
+EOF;
+            // TODO for Nudgis >= 12.3 use the player iframe API to get tab titles
+            /*
+             * @see https://beta.ubicast.net/static/mediaserver/docs/api/player.html
+             *
+             * theiframe.postMessage('getMetadata', '*');  // Send back the media identifier and title using a message event
+             * window.addEventListener('message', function(event) {
+             *     // Check that the message comes from the player iframe.
+             *     if (event.origin !== 'https://your.mediaserver.tv') {
+             *         return;
+             *     }
+             *     // TODO Handle event data.
+             *     console.log('filter_ubicast_playlist event data:', event.data);
+             *  }
+             */
+            $players .= '<div id="filter_ubicast_playlistitem_' . $itemno . '" class="filter_ubicast_playlist_player ' . $hiddenclass . '">' . preg_replace_callback($this->pattern, [
+                    'filter_ubicast',
+                    'get_iframe_html'
+            ], $entryimg) . '</div>';
+        }
+
+        $playlisttext = <<<EOF
+$playlistjs
+<div class="filter_ubicast_playlist">
+    <div class="filter_ubicast_playlist_tabs">
+        $tabs
+    </div>
+    <div class="filter_ubicast_playlist_players">
+        $players
+    </div>
+    <div class="clearfix"></div>
+</div>
+EOF;
+
+
+        return array(
+                true,
+                substr($text, 0, $start) . $playlisttext . substr($text, $nextstop)
+        );
     }
 }

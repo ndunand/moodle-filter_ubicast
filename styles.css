@@ -1,0 +1,54 @@
+.filter_ubicast_playlist {
+    width: 100%;
+    background-color: #222222;
+    border: 1px #dddddd solid;
+    position: relative;
+}
+
+.filter_ubicast_playlist .hidden {
+    display: none;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_tabs {
+    height: 100%;
+    width: 30%;
+    float: right;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_tabs a {
+    color: #dddddd;
+    display: block;
+    padding: 10px;
+    border-bottom: 1px #dddddd solid;
+    text-decoration: none;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_tabs a ol {
+    margin: 0;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_tabs a:hover {
+    text-decoration: none;
+    background-color: #444444;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_tabs a.selected {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.filter_ubicast_playlist .filter_ubicast_playlist_players {
+    height: 100%;
+    width: 70%;
+    float: left;
+}
+
+.filter_ubicast_playlist .clearfix {
+    clear: both;
+}
