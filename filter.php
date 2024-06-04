@@ -101,6 +101,8 @@ class filter_ubicast extends moodle_text_filter {
     private function embedmany($text) {
         global $DB, $PAGE;
 
+        static $jsinserted = 0;
+
         $entries = array();
         $nextstop = 0;
 
@@ -131,6 +133,30 @@ class filter_ubicast extends moodle_text_filter {
 
         $this->isplaylist = true;
 
+        $playlistjs = <<<EOF
+<script type="text/javascript">
+    var tabs = document.getElementsByClassName('filter_ubicast_playlist_tab');
+    var players = document.getElementsByClassName('filter_ubicast_playlist_player');
+    
+    var filter_ubicast_playlisttab_settab = function(itemno) {
+        for (var i = 0; i < players.length; i++) {
+            players[i].classList.add('hidden');
+            players[i].getElementsByTagName('iframe')[0].contentWindow.postMessage('pause', '*');
+            tabs[i].classList.remove('selected');
+        }
+        document.getElementById('filter_ubicast_playlistitem_' + itemno).classList.remove('hidden');
+        document.getElementById('filter_ubicast_playlisttab_' + itemno).classList.add('selected');
+    }
+</script>
+EOF;
+
+        if ($jsinserted) {
+            $playlistjs = '';
+        }
+        else {
+            $jsinserted = 1;
+        }
+
         $players = '';
         $tabs = '';
         foreach ($entries as $entryno => $entryimg) {
@@ -153,8 +179,22 @@ class filter_ubicast extends moodle_text_filter {
             }
 
             $tabs .= <<<EOF
-<a href="#" id="filter_ubicast_playlisttab_$itemno" class="filter_ubicast_playlist_tab $selectedclass" onclick="tabs = document.getElementsByClassName('filter_ubicast_playlist_tab'); players = document.getElementsByClassName('filter_ubicast_playlist_player'); for (var i = 0; i < players.length; i++) { players[i].classList.add('hidden'); tabs[i].classList.remove('selected'); document.getElementById('filter_ubicast_playlistitem_$itemno').classList.remove('hidden'); document.getElementById('filter_ubicast_playlisttab_$itemno').classList.add('selected'); } return false;"><ol start="$itemno"><li>$title</li></ol></a>
+<a href="#" id="filter_ubicast_playlisttab_$itemno" class="filter_ubicast_playlist_tab $selectedclass" onclick="filter_ubicast_playlisttab_settab($itemno); return false;"><ol start="$itemno"><li>$title</li></ol></a>
 EOF;
+            // TODO for Nudgis >= 12.3 use the player iframe API to get tab titles
+            /*
+             * @see https://beta.ubicast.net/static/mediaserver/docs/api/player.html
+             *
+             * theiframe.postMessage('getMetadata', '*');  // Send back the media identifier and title using a message event
+             * window.addEventListener('message', function(event) {
+             *     // Check that the message comes from the player iframe.
+             *     if (event.origin !== 'https://your.mediaserver.tv') {
+             *         return;
+             *     }
+             *     // TODO Handle event data.
+             *     console.log('filter_ubicast_playlist event data:', event.data);
+             *  }
+             */
             $players .= '<div id="filter_ubicast_playlistitem_' . $itemno . '" class="filter_ubicast_playlist_player ' . $hiddenclass . '">' . preg_replace_callback($this->pattern, [
                     'filter_ubicast',
                     'get_iframe_html'
@@ -162,6 +202,7 @@ EOF;
         }
 
         $playlisttext = <<<EOF
+$playlistjs
 <div class="filter_ubicast_playlist">
     <div class="filter_ubicast_playlist_tabs">
         $tabs
