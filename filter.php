@@ -138,15 +138,29 @@ class filter_ubicast extends moodle_text_filter {
     var tabs = document.getElementsByClassName('filter_ubicast_playlist_tab');
     var players = document.getElementsByClassName('filter_ubicast_playlist_player');
     
-    var filter_ubicast_playlisttab_settab = function(itemno) {
+    var filter_ubicast_playlisttab_settab = function(itemno, elementid, b64iframe) {
         for (var i = 0; i < players.length; i++) {
             players[i].classList.add('hidden');
-            players[i].getElementsByTagName('iframe')[0].contentWindow.postMessage('pause', '*');
+            if (players[i].getElementsByTagName('iframe').length) {
+                // Only send the pause message if the iframe is already loaded.
+                players[i].getElementsByTagName('iframe')[0].contentWindow.postMessage('pause', '*');
+            }
             tabs[i].classList.remove('selected');
+            
         }
+        
+        var theplayer = document.getElementById(elementid);
+        
+        if (theplayer.classList.contains('filter_ubicast_player_lazy')) {
+            // iframe already loaded
+            theplayer.innerHTML = window.atob(b64iframe);
+            theplayer.classList.remove('filter_ubicast_player_lazy');
+        }
+        
         document.getElementById('filter_ubicast_playlistitem_' + itemno).classList.remove('hidden');
         document.getElementById('filter_ubicast_playlisttab_' + itemno).classList.add('selected');
     }
+    
 </script>
 EOF;
 
@@ -178,9 +192,11 @@ EOF;
                 // leave it.
             }
 
-            $tabs .= <<<EOF
-<a href="#" id="filter_ubicast_playlisttab_$itemno" class="filter_ubicast_playlist_tab $selectedclass" onclick="filter_ubicast_playlisttab_settab($itemno); return false;"><ol start="$itemno"><li>$title</li></ol></a>
-EOF;
+            $tabs .= '<a href="#" id="filter_ubicast_playlisttab_' . $itemno . '" class="filter_ubicast_playlist_tab ' . $selectedclass . '" onclick="filter_ubicast_playlisttab_settab(' . $itemno . ', \'filter_ubicast_playlistitem_' . $itemno . '\', \'' . base64_encode(preg_replace_callback($this->pattern,
+                                [
+                                        'filter_ubicast',
+                                        'get_iframe_html'
+                                ], $entryimg)) . '\'); return false;"><ol start="' . $itemno . '"><li>' . $title . '</li></ol></a>';
             // TODO for Nudgis >= 12.3 use the player iframe API to get tab titles
             /*
              * @see https://beta.ubicast.net/static/mediaserver/docs/api/player.html
@@ -195,10 +211,24 @@ EOF;
              *     console.log('filter_ubicast_playlist event data:', event.data);
              *  }
              */
-            $players .= '<div id="filter_ubicast_playlistitem_' . $itemno . '" class="filter_ubicast_playlist_player ' . $hiddenclass . '">' . preg_replace_callback($this->pattern, [
-                    'filter_ubicast',
-                    'get_iframe_html'
-            ], $entryimg) . '</div>';
+            if ($itemno === 1) {
+                // Load the fill iframe for the first player only.
+                $currentplayer =
+                        '<div id="filter_ubicast_playlistitem_' . $itemno . '" class="filter_ubicast_playlist_player ' . $hiddenclass . '" >';
+                $currentplayer .= preg_replace_callback($this->pattern, [
+                        'filter_ubicast',
+                        'get_iframe_html'
+                ], $entryimg);
+                $currentplayer .= '</div>';
+            }
+            else {
+                // For other player, lazy-load using the preview image.
+                $currentplayer =
+                        '<div id="filter_ubicast_playlistitem_' . $itemno . '" class="filter_ubicast_playlist_player filter_ubicast_player_lazy ' . $hiddenclass . '" >';
+                $currentplayer .= $entryimg;
+                $currentplayer .= '</div>';
+            }
+            $players .= $currentplayer;
         }
 
         $playlisttext = <<<EOF
