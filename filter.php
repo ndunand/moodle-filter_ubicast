@@ -30,9 +30,13 @@ class filter_ubicast extends moodle_text_filter {
     private static function get_iframe_url($matches) {
         global $CFG;
 
-        $courseid = $matches[1];
-        $mediaid = $matches[2];
-        $style = $matches[3];
+        $coursectx = $this->context->get_course_context(false);
+        if (!$coursectx) {
+            return '';  // Drop the image tag when no course id can be retrieved
+        }
+        $courseid = $coursectx->instanceid;
+        $mediaid = $matches[1];
+        $style = $matches[2];
         if (strpos($style, 'width') === false) {
             $style = 'width: 100%;' . $style;
         }
@@ -55,7 +59,6 @@ class filter_ubicast extends moodle_text_filter {
      * @return string the HTML content after the filtering has been applied.
      */
     public function filter($text, array $options = array()) {
-
         if (!is_string($text)) {
             // Non string data can not be filtered anyway.
             return $text;
@@ -65,12 +68,9 @@ class filter_ubicast extends moodle_text_filter {
             return $text;
         }
 
-        $pattern = '/<img[^>]*class="atto_ubicast courseid_([0-9]+)_mediaid_([a-z0-9]+)"[^>]*style="([^"]*)"[^>]*>/';
+        $pattern = '/<img[^>]*class="atto_ubicast (?:courseid_[0-9]+_)?mediaid_([a-z0-9]+)"[^>]*style="([^"]*)"[^>]*>/';
 
-        $text = preg_replace_callback($pattern, [
-                'filter_ubicast',
-                'get_iframe_url'
-        ], $text);
+        $text = preg_replace_callback($pattern, ['filter_ubicast', 'get_iframe_url'], $text);
 
         return $text;
     }

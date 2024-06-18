@@ -25,12 +25,12 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2023102700;
+$plugin->version = 2024061800;
 $plugin->requires = 2019052000; // Moodle 3.7.
 $plugin->component = 'filter_ubicast';
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.4';
-$plugin->dependencies = array(
-    'atto_ubicast' => 2021010100, // To have atto_ubicast offering the atto_ubicast/usefilter setting.
+$plugin->release = '2.0';
+$plugin->dependencies = [
+    'atto_ubicast' => 2024061800, // To have atto_ubicast offering the atto_ubicast/usefilter setting.
     'mod_ubicast'  => 2021010100, // To have mod_ubicast/media_selector.js use input[name=mediaimg].
-);
+];
