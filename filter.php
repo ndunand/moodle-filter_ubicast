@@ -102,6 +102,7 @@ class filter_ubicast extends moodle_text_filter {
         global $DB, $PAGE;
 
         static $jsinserted = 0;
+        static $playlistno = 0;
 
         $entries = array();
         $nextstop = 0;
@@ -132,20 +133,22 @@ class filter_ubicast extends moodle_text_filter {
         }
 
         $this->isplaylist = true;
+        $playlistno++;
+        $jsinserted = 0;
 
         $playlistjs = <<<EOF
 <script type="text/javascript">
-    var tabs = document.getElementsByClassName('filter_ubicast_playlist_tab');
-    var players = document.getElementsByClassName('filter_ubicast_playlist_player');
+    var filter_ubicast_playlist_tabs_$playlistno = document.getElementsByClassName('filter_ubicast_playlist_tab_$playlistno');
+    var filter_ubicast_playlist_players_$playlistno = document.getElementsByClassName('filter_ubicast_playlist_player_$playlistno');
     
-    var filter_ubicast_playlisttab_settab = function(itemno, elementid, b64iframe) {
-        for (var i = 0; i < players.length; i++) {
-            players[i].classList.add('hidden');
-            if (players[i].getElementsByTagName('iframe').length) {
+    var filter_ubicast_playlisttab_settab_$playlistno = function(itemno, elementid, b64iframe) {
+        for (var i = 0; i < filter_ubicast_playlist_players_$playlistno.length; i++) {
+            filter_ubicast_playlist_players_{$playlistno}[i].classList.add('hidden');
+            if (filter_ubicast_playlist_players_{$playlistno}[i].getElementsByTagName('iframe').length) {
                 // Only send the pause message if the iframe is already loaded.
-                players[i].getElementsByTagName('iframe')[0].contentWindow.postMessage('pause', '*');
+                filter_ubicast_playlist_players_{$playlistno}[i].getElementsByTagName('iframe')[0].contentWindow.postMessage('pause', '*');
             }
-            tabs[i].classList.remove('selected');
+            filter_ubicast_playlist_tabs_{$playlistno}[i].classList.remove('selected');
             
         }
         
@@ -157,8 +160,8 @@ class filter_ubicast extends moodle_text_filter {
             theplayer.classList.remove('filter_ubicast_player_lazy');
         }
         
-        document.getElementById('filter_ubicast_playlistitem_' + itemno).classList.remove('hidden');
-        document.getElementById('filter_ubicast_playlisttab_' + itemno).classList.add('selected');
+        document.getElementById('filter_ubicast_playlistitem_{$playlistno}_' + itemno).classList.remove('hidden');
+        document.getElementById('filter_ubicast_playlisttab_{$playlistno}_' + itemno).classList.add('selected');
     }
     
 </script>
@@ -192,7 +195,7 @@ EOF;
                 // leave it.
             }
 
-            $tabs .= '<a href="#" id="filter_ubicast_playlisttab_' . $itemno . '" class="filter_ubicast_playlist_tab ' . $selectedclass . '" onclick="filter_ubicast_playlisttab_settab(' . $itemno . ', \'filter_ubicast_playlistitem_' . $itemno . '\', \'' . base64_encode(preg_replace_callback($this->pattern,
+            $tabs .= '<a href="#" id="filter_ubicast_playlisttab_' . $playlistno . '_' . $itemno . '" class="filter_ubicast_playlist_tab_' . $playlistno . ' ' . $selectedclass . '" onclick="filter_ubicast_playlisttab_settab_' . $playlistno . '(' . $itemno . ', \'filter_ubicast_playlistitem_' . $playlistno . '_' . $itemno . '\', \'' . base64_encode(preg_replace_callback($this->pattern,
                                 [
                                         'filter_ubicast',
                                         'get_iframe_html'
@@ -214,7 +217,7 @@ EOF;
             if ($itemno === 1) {
                 // Load the fill iframe for the first player only.
                 $currentplayer =
-                        '<div id="filter_ubicast_playlistitem_' . $itemno . '" class="filter_ubicast_playlist_player ' . $hiddenclass . '" >';
+                        '<div id="filter_ubicast_playlistitem_' . $playlistno . '_' . $itemno . '" class="filter_ubicast_playlist_player_' . $playlistno . ' ' . $hiddenclass . '" >';
                 $currentplayer .= preg_replace_callback($this->pattern, [
                         'filter_ubicast',
                         'get_iframe_html'
@@ -224,7 +227,7 @@ EOF;
             else {
                 // For other player, lazy-load using the preview image.
                 $currentplayer =
-                        '<div id="filter_ubicast_playlistitem_' . $itemno . '" class="filter_ubicast_playlist_player filter_ubicast_player_lazy ' . $hiddenclass . '" >';
+                        '<div id="filter_ubicast_playlistitem_' . $playlistno . '_' . $itemno . '" class="filter_ubicast_playlist_player_' . $playlistno . ' filter_ubicast_player_lazy ' . $hiddenclass . '" >';
                 $currentplayer .= $entryimg;
                 $currentplayer .= '</div>';
             }
